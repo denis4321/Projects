@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+    <appender name="logapp" class="org.apache.log4j.RollingFileAppender">
+        <param name="Name" value="file-appender"/>
+        <param name="File" value="logapp.log"/>
+        <param name="MaxFileSize" value="5MB"/>
+        <param name="MaxBackupIndex" value="50"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[%d{dd-MMM-yy:HH:mm:ss,SSS}] {%c{1}} (%x)> %m%n"/>
+        </layout>
+    </appender>
+    <appender name="error-logapp" class="org.apache.log4j.RollingFileAppender">
+        <param name="Threshold" value="ERROR"/>
+        <param name="Name" value="file-appender"/>
+        <param name="File" value="error-logapp.log"/>
+        <param name="MaxFileSize" value="5MB"/>
+        <param name="MaxBackupIndex" value="50"/>
+        <param name="Append" value="false"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="[%d{dd-MMM-yy:HH:mm:ss}] {%c{1}} (%x)> %m%n"/>
+        </layout>
+    </appender>                                    
+     
+    <logger name="tradestore-feed-ftp-logger" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="logapp"/>
+        <appender-ref ref="error-logapp"/>
+    </logger>  
+    
+    <root>
+        <priority value="ERROR"/>
+        <appender-ref ref="error-logapp"/>
+    </root>
+</log4j:configuration>
