@@ -1,0 +1,8 @@
+K 10
+svn:ignore
+V 43
+build-impl.xml
+genfiles.properties
+private
+
+END

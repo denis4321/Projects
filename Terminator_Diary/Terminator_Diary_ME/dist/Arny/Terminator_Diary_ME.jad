@@ -1,0 +1,8 @@
+MIDlet-1: TerminatorMID, , com.conarhco.terminator.me.TerminatorMID
+MIDlet-Jar-Size: 86737
+MIDlet-Jar-URL: Terminator_Diary_ME.jar
+MIDlet-Name: Terminator_Diary_ME
+MIDlet-Vendor: Vendor
+MIDlet-Version: 1.0
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0

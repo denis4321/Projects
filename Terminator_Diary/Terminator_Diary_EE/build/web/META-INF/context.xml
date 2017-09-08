@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context antiJARLocking="true" path="/arny">
+<Resource name="jdbc/arny"
+              auth="Container"
+              type="javax.sql.DataSource"
+              driverClassName="com.mysql.jdbc.Driver"
+              url="jdbc:mysql://localhost/terminator?autoReconnect=true"
+              maxActive="8"
+              maxIdle="4"
+              username="root"
+              password="111111"/>
+
+<Realm className="org.apache.catalina.realm.DataSourceRealm"
+           dataSourceName="jdbc/arny"
+           localDataSource="true"
+           userTable="users"
+           userNameCol="login"
+           userCredCol="pass"
+           userRoleTable="users"
+           roleNameCol="role"
+           digest="MD5"
+           />
+</Context>

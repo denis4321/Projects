@@ -1,0 +1,252 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package com.conarhco.terminator.me;
+
+import com.conarhco.terminator.common.Exercise;
+import com.conarhco.terminator.common.ExerciseSet;
+import com.conarhco.terminator.common.Workout;
+import com.conarhco.terminator.store.WorkoutStore;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Vector;
+import javax.microedition.lcdui.Alert;
+import javax.microedition.lcdui.AlertType;
+import javax.microedition.lcdui.Command;
+import javax.microedition.lcdui.CommandListener;
+import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.List;
+import javax.microedition.midlet.*;
+import javax.microedition.rms.RecordStoreException;
+
+/**
+ * Голавный класс мидлета.
+ * Сдеалать сохранинение текущей тренировки и загрузки ее при включении приложения
+ * @author Конарх
+ */
+public class TerminatorMID extends MIDlet implements CommandListener{
+    public static final Command BACK = new Command("Назад",Command.BACK,1);
+    public static final Command EXIT = new Command("Выход", Command.EXIT, 1);
+    public static final Command finishTraining = new Command("Закончить тренеровку",Command.SCREEN,3);
+    public static final Command viewHistory = new Command("История",Command.SCREEN,2);
+    public static final Command exitHistory = new Command("Покинуть историю",Command.BACK,2);
+    private Vector workoutsVectorTest = new Vector();//Временно: вектор для тренировок
+    private Workout currWorkout = null;//Текущая тренировка
+    public WorkoutList workoutList = new WorkoutList(this);
+    public ExerciseList exList = null;
+    private WorkoutStore myStore = new WorkoutStore();
+    private boolean isFirst = true;
+    private static TerminatorMID midlet;
+    private HistoryList list;
+    private Displayable historyPrev = null;
+
+    public TerminatorMID() {
+        midlet = this;
+        Workout w = new Workout(1, "Грудь и бицепс");
+        Exercise e = new Exercise("Жим от груди лежа", Exercise.BASE, new ExerciseSet[]{
+                    new ExerciseSet(10, 50), new ExerciseSet(10, 55), new ExerciseSet(10, 60)
+                }, 60);
+        w.addExercise(e);
+        e = new Exercise("Подъем ног согнутых в коленях", Exercise.ISOLATE, new ExerciseSet[]{
+                    new ExerciseSet(60, 0), new ExerciseSet(60, 0)}, 30);
+        w.addExercise(e);
+        workoutsVectorTest.addElement(w);
+        w = new Workout(3, "Плечи и ноги");
+        e = new Exercise("Жим гантелей сидя", Exercise.BASE, new ExerciseSet[]{
+                    new ExerciseSet(10, 16), new ExerciseSet(8, 14), new ExerciseSet(8, 16), new ExerciseSet(8, 18)
+                }, 60);
+        w.addExercise(e);
+        e = new Exercise("Подъем ног согнутых в коленях", Exercise.ISOLATE, new ExerciseSet[]{
+                    new ExerciseSet(60, 0), new ExerciseSet(60, 0)}, 30);
+        w.addExercise(e);
+        workoutsVectorTest.addElement(w);
+    }
+
+    /**
+     * Загружает трeнировки
+     */
+    private Hashtable loadWorkouts() {
+        Enumeration en = workoutsVectorTest.elements();
+        
+        Workout w = null;
+        Hashtable tb = new Hashtable();
+        while (en.hasMoreElements()) {
+            w = (Workout) en.nextElement();
+            String value = w.getName();
+            Integer key = new Integer(w.getNum());
+            tb.put(key, value);
+        }
+        return tb;
+    }
+
+    public void startApp() {
+        try{//Инициализация списка тернировок
+            if (isFirst){
+                isFirst = false;
+                setCurrentWorkout(myStore.load("workout"), false);
+            }
+            if (currWorkout == null) {
+                //Список тренировок
+                showWorkouts();
+            } else {
+                //Список упражнений текущей тренировки
+                showExercises();
+            }
+        }catch (Exception ex){
+            ex.printStackTrace();
+        }
+    }
+
+    //Загружает и инициализирует тренировки
+    public void showWorkouts() {
+        Hashtable workoutsTable = loadWorkouts();
+        workoutList.deleteAll();
+        workoutList.setWorkouts(workoutsTable);
+        Display.getDisplay(this).setCurrent(workoutList);
+    }
+
+    /**
+     * Устанавливает текущую тренировку
+     * TODO: Здесь будет загрузка тренировки по сети
+     * @param w
+     */
+    public void setCurrentWorkout(int workoutNum, boolean save) {
+        for (Enumeration en = workoutsVectorTest.elements(); en.hasMoreElements();) {
+            Workout w = (Workout) en.nextElement();
+            if (w.getNum() == workoutNum) {
+                 //System.out.println(w.getName()+"asdasdasdasdsad");
+                 setCurrentWorkout(w, save);
+                 return;
+            }
+        }
+        throw new IllegalArgumentException("Invalid workout num!");
+    }
+
+    public void setCurrentWorkout(Workout w, boolean save) {
+        if (currWorkout!=null&&w!=null) throw new IllegalStateException("workout already open!");
+        currWorkout = w;
+        if (currWorkout!=null){
+            if (save){
+                try {
+                    myStore.saveWorkout(w, WorkoutStore.CURRENT_WORKOUT);
+                    exList = null;
+                    showExercises();
+                } catch (Exception ex) {
+                    showError(ex, null);
+                }
+            }
+        }
+    }
+
+    public void updateExercise(Exercise e){
+        try {
+            myStore.saveExercise(e);
+        } catch (Exception ex) {
+            showError(ex, null);
+        }
+    }
+
+    public Workout getCurrentWorkout() {
+        return currWorkout;
+    }
+
+    /**
+     * Показывает список упражнений
+     */
+    public void showExercises() {
+         System.out.println("------------------");
+        if (exList==null) exList=new ExerciseList();
+        Display.getDisplay(this).setCurrent(exList);
+    }
+
+
+    public void showExercise(int index) throws IOException{
+       
+        EditExerciseForm edExer = new EditExerciseForm(currWorkout.getExercise(index));
+        Display.getDisplay(this).setCurrent(edExer);
+    }
+
+
+    public void pauseApp() {
+    }
+
+    public void destroyApp(boolean unconditional) {
+        // if(this.needToSaveWorkout) this.wStore.save(currWorkout,"workout");
+        
+    }
+
+    // Возвращет эл-т из вектора по выбору из списка
+    public Object getSelElementFromList(List src, Vector source) {
+        int index = src.getSelectedIndex();
+        return source.elementAt(index);
+    }
+
+    public void commandAction(Command c, Displayable d) {
+        if (c ==EXIT) {
+            destroyApp(true);
+            notifyDestroyed();
+        }
+        else if(c==TerminatorMID.viewHistory){
+            historyPrev = d;
+            TerminatorMID.getMidlet().showHistoryList();
+        }
+        else if(c==TerminatorMID.exitHistory){
+            TerminatorMID.getMidlet().backFromHistoryList();
+        }
+        else if (c==finishTraining){
+            try {
+                myStore.clearWorkout(WorkoutStore.HISTORY_WORKOUT, null, true);
+                myStore.saveWorkout(currWorkout,WorkoutStore.HISTORY_WORKOUT);
+                myStore.clearWorkout(WorkoutStore.CURRENT_WORKOUT, currWorkout, false);
+                this.currWorkout=null;
+            } catch (Exception ex) {
+                showError(ex, d);
+            }
+            this.showWorkouts();   
+        }
+    }
+
+    public static TerminatorMID getMidlet(){
+        return midlet;
+    }
+
+    public static void showError(Exception ex, Displayable ret) {
+        ex.printStackTrace();
+        Alert error = new Alert("аШипка!", ex.toString(), null, AlertType.ERROR);
+        error.setTimeout(5000);
+        if (ret!=null){
+            Display.getDisplay(midlet).setCurrent(error, ret);
+        } else {
+            Display.getDisplay(midlet).setCurrent(error);
+        }
+    }
+
+    public WorkoutStore getStore(){
+        return myStore;
+    }
+
+    public void showHistoryList(){
+        try {
+            Workout w = myStore.load("history");
+            list = new HistoryList(w);
+            Display.getDisplay(this).setCurrent(list);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void showHistoryForm(Exercise e){
+            Display.getDisplay(this).setCurrent(new HistoryForm(e));
+    }
+
+    public void backFromHistoryForm(){
+        Display.getDisplay(this).setCurrent(list);
+    }
+
+    public void backFromHistoryList(){
+        Display.getDisplay(this).setCurrent(historyPrev);
+    }
+}
